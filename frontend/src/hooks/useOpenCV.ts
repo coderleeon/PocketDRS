@@ -43,8 +43,8 @@ export function useOpenCV() {
     if (!script) {
       script = document.createElement('script');
       script.id = scriptId;
-      // Using a stable OpenCV.js CDN URL (version 4.10.0)
-      script.src = 'https://docs.opencv.org/4.10.0/opencv.js';
+      // Use local public version to ensure rapid, offline-first load
+      script.src = '/opencv.js';
       script.async = true;
       script.type = 'text/javascript';
       
