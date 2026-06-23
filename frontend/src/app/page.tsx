@@ -493,6 +493,71 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* Card 4: About & Connect */}
+          <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-850 pb-2">
+              <h2 className="text-xs font-black tracking-wider uppercase text-indigo-400">
+                About PocketDRS
+              </h2>
+            </div>
+            
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              PocketDRS is an experimental computer-vision-powered cricket review system designed for home, society, and amateur cricket. The platform uses on-device computer vision and trajectory analysis to estimate ball tracking, wicket prediction, and LBW decisions directly in the browser.
+            </p>
+
+            <div className="flex flex-col gap-2 pt-1 border-t border-slate-800/60">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Creator</span>
+              <div className="flex flex-col text-[11px]">
+                <span className="font-extrabold text-slate-200">Leeon John</span>
+                <span className="text-slate-400 text-[10px]">M.Tech Artificial Intelligence</span>
+                <span className="text-slate-500 text-[9px] font-mono leading-none mt-0.5">Pandit Deendayal Energy University (PDEU)</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2 border-t border-slate-800/60">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Connect</span>
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
+                <a
+                  href="mailto:leeonjohn.work@gmail.com"
+                  className="py-2 px-1 rounded-xl bg-slate-950 hover:bg-indigo-950/35 border border-slate-850 hover:border-indigo-900/50 text-indigo-400 hover:text-indigo-300 flex items-center justify-center gap-1.5 transition text-center shadow-sm"
+                >
+                  Email
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/leeon-john-14172a159/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-1 rounded-xl bg-slate-950 hover:bg-indigo-950/35 border border-slate-850 hover:border-indigo-900/50 text-indigo-400 hover:text-indigo-300 flex items-center justify-center gap-1.5 transition text-center shadow-sm"
+                >
+                  LinkedIn
+                </a>
+                <a
+                  href="https://github.com/coderleeon"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-1 rounded-xl bg-slate-950 hover:bg-indigo-950/35 border border-slate-850 hover:border-indigo-900/50 text-indigo-400 hover:text-indigo-300 flex items-center justify-center gap-1.5 transition text-center shadow-sm"
+                >
+                  GitHub
+                </a>
+                <a
+                  href="https://x.com/LeeonJohn_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-1 rounded-xl bg-slate-950 hover:bg-indigo-950/35 border border-slate-850 hover:border-indigo-900/50 text-indigo-400 hover:text-indigo-300 flex items-center justify-center gap-1.5 transition text-center shadow-sm"
+                >
+                  X (Twitter)
+                </a>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1 border-t border-slate-800/60 pt-2 text-[9px] text-slate-500 leading-relaxed">
+              <span className="font-bold text-slate-400 uppercase tracking-wider text-[8px]">Disclaimer</span>
+              <p>
+                PocketDRS is an independent experimental project intended for amateur cricket analysis. It is not affiliated with ICC, Hawk-Eye, or any professional cricket governing body.
+              </p>
+            </div>
+          </div>
         </div>
       </main>
 
