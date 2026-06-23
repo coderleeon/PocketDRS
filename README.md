@@ -1,111 +1,125 @@
-# Pocket-DRS
+# 🏏 Pocket-DRS
 
-Pocket-DRS is an offline-first, browser-based cricket analytics platform designed to deliver a low-cost, DRS-style experience using a single smartphone camera and a fixed playing environment (e.g., an indoor tiled pitch with a wicket cardboard marker).
+[![Vercel Deployment](https://img.shields.io/badge/Deployment-Vercel-success?style=for-the-badge&logo=vercel&logoColor=white&color=000000)](https://pocket-drs.vercel.app)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-blue?style=for-the-badge&logo=nextdotjs&logoColor=white&color=0f172a)](https://nextjs.org)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS-cyan?style=for-the-badge&logo=tailwindcss&logoColor=white&color=0f172a)](https://tailwindcss.com)
+[![OpenCV.js](https://img.shields.io/badge/CV%20Engine-OpenCV.js-emerald?style=for-the-badge&logo=opencv&logoColor=white&color=0f172a)](https://docs.opencv.org)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal?style=for-the-badge&logo=fastapi&logoColor=white&color=0f172a)](https://fastapi.tiangolo.com)
 
----
-
-## Development Strategy: Single Shared Codebase
-
-To ensure stability, simple maintenance, and high performance across devices, Pocket-DRS uses a **single shared codebase** for both desktop and mobile platforms.
-
-### Core Assets Shared:
-* **Calibration Logic**: The same coordinate math and homography solvers ([useCalibration.ts](file:///c:/GIT_projects/PocketDRS/frontend/src/hooks/useCalibration.ts)) are used by all devices.
-* **OpenCV.js CV Engine**: The video processing loop, grayscaling, absolute difference motion tracking, and HSV masking logic ([tracker.ts](file:///c:/GIT_projects/PocketDRS/frontend/src/core/tracking/tracker.ts)) run identically on all browser instances.
-* **Overlay Engine**: Canvas drawing logic ([PitchOverlay.tsx](file:///c:/GIT_projects/PocketDRS/frontend/src/components/PitchOverlay.tsx)) prints the pitch borders, popping creases, wickets, and visual flight path lines uniformly.
-* **Data Models & Math**: Geometry algorithms, Shoelace polygon area calculations, and least-squares regression math ([geom.ts](file:///c:/GIT_projects/PocketDRS/frontend/src/core/geometry/geom.ts)) are shared.
-
-### Presentation Adaptation:
-* **Unified Interactions**: Interactive drag-and-drop handles ([CalibrationWorkspace.tsx](file:///c:/GIT_projects/PocketDRS/frontend/src/components/CalibrationWorkspace.tsx)) utilize HTML5 **Pointer Events** (`onPointerDown`, `onPointerMove`, `onPointerUp`). This automatically unifies desktop mouse drags and mobile screen touch inputs.
-* **Responsive Layouts**: Designed utilizing Tailwind CSS breakpoints to adapt components gracefully from standard smartphone viewports (e.g., iPhone 12/14 and Samsung A52s) to larger desktop grids.
-* **Sensor Integration**: Mobile-only capabilities, such as the digital level gyroscope indicator ([ARAlignment.tsx](file:///c:/GIT_projects/PocketDRS/frontend/src/components/ARAlignment.tsx)), fail gracefully or hide automatically on desktop environments.
+An **offline-first, browser-based cricket analytics platform** designed to deliver a low-cost, professional DRS-style review experience using a single smartphone camera and on-device computer vision. No expensive sensors or radar units required.
 
 ---
 
-## Architecture Principles
+## ⚡ Core Capabilities
 
-### 1. Offline-First Architecture
-For Version 0 (MVP), Pocket-DRS functions completely on-device in the user's browser:
-* **Camera Access & Recording**: Accomplished through standard HTML5 Media Devices and `MediaRecorder` APIs.
-* **Computer Vision**: High-performance client-side operations (homography calculation, coordinates projection) using **OpenCV.js**.
-* **Storage**: Calibration matrices and settings are persisted via browser `localStorage`.
-* **Video Playback**: Videos recorded on-device are converted into temporary Object URLs for playback.
-No server connections are required to run, record, calibrate, or visualize overlays.
-
-### 2. Browser-First Computer Vision
-The client browser is the primary computer vision engine. Future features (ball detection, path tracking, coordinate extraction) will execute client-side. The backend is designated as an analytical decision engine (future LBW projection calculations and match statistics) to minimize bandwidth and hosting costs.
-
-### 3. Video Storage Policy
-* Raw video recordings are kept **strictly on-device**. They are never uploaded to the cloud by default.
-* Future history scaling will utilize browser `IndexedDB`.
-* The cloud backend only receives lightweight, structured coordinate JSON metadata (e.g. ball trajectories, bounce points, calibration points) rather than media files.
+* **📱 Device Orientation Enforcing**: Built-in responsive overlay locks viewport to **landscape mode** to guarantee consistent camera aspect ratios and math precision during pitches.
+* **📐 Interactive Pitch Calibration Workspace**: Drag-and-drop workspace supporting high-precision coordinate mapping. Includes a keyboard/button D-pad nudge controller and a floating magnifier loupe so fingers never cover the line.
+* **🌀 Client-Side OpenCV.js Engine**: Performs absolute difference frame differencing, color-space HSV thresholding, circular contour filtering, and quadratic regression curves for path smoothing directly inside your browser.
+* **🎥 Rich Playback Controls**: Interactive seek bar stepping frame-by-frame with precise snap alignment, 5-navigation control buttons, and dynamic keyboard shortcuts.
+* **⚖️ Custom LBW Rules Engine**: Translates 2D canvas trajectory pixels to real-world ground meters using homography projection matrices. Automates official ICC LBW rules processing with toggles for batsman handedness and stroke offering.
+* **💾 Local Persistence**: Instant profile reload on client initialization from browser `localStorage`, eliminating loading lag or hydration flashes.
 
 ---
 
-## Repository Structure
+## 🏗️ System Architecture
+
+The following diagram illustrates how video frames progress from standard browser inputs to mathematical 3D trajectory estimations entirely on the client-side:
+
+```mermaid
+graph TD
+    A[Smartphone Camera / Video Upload] --> B[HTML5 MediaRecorder]
+    B --> C[Blob Object URL]
+    C --> D[OpenCV.js CV Engine]
+    D -->|Frame Differencing| E[Motion Mask]
+    D -->|HSV Thresholding| F[Color Mask]
+    E & F -->|Bitwise AND| G[Final CV Mask]
+    G -->|Contour Filtering| H[Centroids Extraction]
+    H -->|Quadratic Regression| I[Smoothed 2D Trajectory]
+    I --> J[LBW Decision Engine]
+    J -->|Homography Projection| K[Real-world Ground Coordinates]
+    K -->|Pitching / Impact Zones| L[ICC LBW Rules Solver]
+    L --> M[Interactive Playback Overlay HUD]
+    
+    style D fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
+    style J fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:#fff
+    style L fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
+```
+
+---
+
+## 📂 Repository Structure
 
 ```text
 PocketDRS/
-├── frontend/                  # Next.js, Tailwind CSS, and TypeScript application
+├── frontend/                  # Next.js, Tailwind CSS & TypeScript app
 │   ├── src/
-│   │   ├── app/               # Next.js App Router and pages
-│   │   ├── components/        # Camera, Calibration, Overlay, and Playback components
-│   │   ├── core/              # Shared geometry, calibration, tracking, and models
-│   │   └── hooks/             # React hooks wrappers
+│   │   ├── app/               # App Router pages (Home, layout, manifest)
+│   │   ├── components/        # CameraFeed, CalibrationWorkspace, PlaybackPlayer, ARAlignment
+│   │   ├── core/              # Shared geometry math, tracking loop, and LBW rules solver
+│   │   │   ├── geometry/      # Homography matrices and coordinate projection
+│   │   │   ├── lbw/           # ICC pitching, impact, and stumps hit checkers
+│   │   │   └── tracking/      # OpenCV.js frame processor
+│   │   └── hooks/             # useOpenCV, useCalibration, useBallTracker wrappers
 │   └── package.json
-└── backend/                   # FastAPI Python application (Railway ready)
-    ├── app/                   # FastAPI main entry points
-    ├── Dockerfile             # Container configuration for Railway deployment
+└── backend/                   # FastAPI Python app (Railway ready)
+    ├── app/                   # API entry point & routers
+    ├── Dockerfile             # Container configuration for cloud hosting
     └── requirements.txt       # Python dependencies
 ```
 
 ---
 
-## Roadmap
+## 🛠️ Local Development Setup
 
-* **Version 0 (MVP)**: Client-side mobile camera capture, on-device recording playback, OpenCV.js-based manual pitch & wicket calibration, persistent overlays, and gyroscope level alignment.
-* **Version 1**: Client-side ball detection and tracking.
-* **Version 2**: Analytical backend endpoints for LBW decisions (impact, bounce, wicket collision prediction) and speed estimation.
-* **Version 3**: Bowling analytics, line/length heatmaps, and session history dashboard.
-* **Version 4**: DRS 3D-style replay visualization screen.
-* **Future Post-MVP**: 
+### Prerequisites
+* **Node.js**: `v18+`
+* **Python**: `v3.10+`
+
+### 1. Launching the Frontend
+
+Navigate into the frontend directory, install npm packages, and spin up the developer server:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your web browser. 
+
+> [!TIP]
+> Ensure you grant camera permissions to your browser if prompts appear. If local HTTPS loopbacks are required on mobile, expose the port using `ngrok` or similar tunnels.
+
+### 2. Launching the Backend
+
+Navigate into the backend directory, initialize a python virtual environment, install dependencies, and run the FastAPI server:
+```bash
+cd backend
+python -m venv venv
+
+# Activate Virtual Env
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+The interactive Swagger API documentation will be available at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+---
+
+## 🗺️ Project Roadmap
+
+- [x] **Version 0 (MVP)**: Client-side mobile camera capture, on-device recording playback, OpenCV.js-based manual pitch & wicket calibration, persistent overlays, and gyroscope level alignment.
+- [x] **Version 1**: Client-side ball detection, HSV chroma thresholding, motion differencing, and trajectory curve smoothing.
+- [x] **Version 2**: Multi-phase LBW rules calculator (pitching line, batsman impact coordinate, stumps path prediction).
+- [ ] **Version 3**: Analytical backend endpoints for match history scaling, bowling analytics, line/length heatmaps, and session history dashboard.
+- [ ] **Version 4**: DRS 3D-style replay visualization screen.
+- [ ] **Future Post-MVP**:
   * Custom HSV threshold calibration panel.
   * AR-Assisted Calibration (auto-scanning pitch tile boundaries and floor orientation via camera scene understanding).
 
 ---
 
-## Local Development Setup
-
-### Prerequisites
-* [Node.js](https://nodejs.org/) (v18+)
-* [Python](https://www.python.org/) (v3.10+)
-
-### Running the Frontend
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-4. Access [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Running the Backend
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create a virtual environment and install packages:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-3. Start the server:
-   ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
+## 📜 Disclaimer
+Pocket-DRS is an independent, experimental educational project intended for amateur cricket analysis. It is not affiliated with the International Cricket Council (ICC), Hawk-Eye Innovations, or any professional cricket governing body.
