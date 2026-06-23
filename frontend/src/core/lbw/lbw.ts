@@ -3,13 +3,38 @@ import { fitQuadraticCurve } from '@/core/geometry/geom';
 import { projectPixelsToMeters } from '@/core/calibration/calibration';
 
 /**
- * Version 2 Wicket Hitting Prediction Engine.
+ * Returns whether a point in ground meters falls in line, outside off, or outside leg.
+ * Assumes a pitch width of 3.05 meters. Center of the pitch is at X = 1.525 meters.
+ * Stumps width is 0.2286 meters (9 inches), extending from 1.4107m to 1.6393m.
+ */
+function getBallZone(xMeters: number, handedness: 'RHB' | 'LHB'): 'IN_LINE' | 'OUTSIDE_OFF' | 'OUTSIDE_LEG' {
+  const leftStump = 1.525 - 0.1143;  // 1.4107m
+  const rightStump = 1.525 + 0.1143; // 1.6393m
+
+  if (xMeters >= leftStump && xMeters <= rightStump) {
+    return 'IN_LINE';
+  }
+  
+  if (xMeters < leftStump) {
+    // Left of stumps is Leg side for RHB, Off side for LHB
+    return handedness === 'RHB' ? 'OUTSIDE_LEG' : 'OUTSIDE_OFF';
+  } else {
+    // Right of stumps is Off side for RHB, Leg side for LHB
+    return handedness === 'RHB' ? 'OUTSIDE_OFF' : 'OUTSIDE_LEG';
+  }
+}
+
+/**
+ * Full Cricket LBW Decision Engine.
  * Detects the bounce frame, detects the pad impact frame, fits the post-bounce flight path,
  * projects it to the stumps plane (20.12m), and checks for stump collision.
+ * Validates pitching/impact zones according to official ICC LBW rules.
  */
 export function checkLBWDecision(
   calibration: CalibrationData | null,
-  ballPositions: TrajectoryPoint[]
+  ballPositions: TrajectoryPoint[],
+  batsmanHandedness: 'RHB' | 'LHB' = 'RHB',
+  strokeOffered: boolean = true
 ): LBWDecision {
   if (!calibration || ballPositions.length < 3) {
     return { decision: 'UNKNOWN', trajectoryConfidence: 0 };
@@ -127,7 +152,6 @@ export function checkLBWDecision(
   // Real-world speed along the pitch axis (meters per frame)
   let speedV = (V_impact - V_bounce) / (impactPoint.frame - bouncePoint.frame || 1);
   if (speedV <= 0.05) {
-    // Default fallback velocity (0.4m per frame corresponds to ~40-50 km/h at 30fps)
     speedV = 0.4;
   }
 
@@ -171,7 +195,35 @@ export function checkLBWDecision(
 
   const hitsStumpsHorizontal = stumpsFrame.x >= x_left && stumpsFrame.x <= x_right;
   const hitsStumpsVertical = stumpsFrame.y >= y_top && stumpsFrame.y <= y_bottom;
-  const decision = (hitsStumpsHorizontal && hitsStumpsVertical) ? 'HITTING' : 'MISSING';
+  const stumpsHit = hitsStumpsHorizontal && hitsStumpsVertical;
+
+  // 5.5 ZONE CLASSIFICATION & CRICKET-RULE DECISION
+  let pitchZone: 'IN_LINE' | 'OUTSIDE_OFF' | 'OUTSIDE_LEG' = 'IN_LINE';
+  if (bounceMeters) {
+    pitchZone = getBallZone(bounceMeters.x, batsmanHandedness);
+  }
+
+  let impactZone: 'IN_LINE' | 'OUTSIDE_OFF' | 'OUTSIDE_LEG' = 'IN_LINE';
+  if (impactMeters) {
+    impactZone = getBallZone(impactMeters.x, batsmanHandedness);
+  }
+
+  let decision: 'OUT' | 'NOT_OUT' = 'OUT';
+  let lbwReason = 'OUT';
+
+  if (pitchZone === 'OUTSIDE_LEG') {
+    decision = 'NOT_OUT';
+    lbwReason = 'Pitched outside leg';
+  } else if (impactZone === 'OUTSIDE_LEG') {
+    decision = 'NOT_OUT';
+    lbwReason = 'Impact outside leg';
+  } else if (strokeOffered && impactZone === 'OUTSIDE_OFF') {
+    decision = 'NOT_OUT';
+    lbwReason = 'Impact outside off (stroke offered)';
+  } else if (!stumpsHit) {
+    decision = 'NOT_OUT';
+    lbwReason = 'Wickets missing';
+  }
 
   // 6. TRAJECTORY CONFIDENCE SCORE
   let confidence = 100;
@@ -194,6 +246,12 @@ export function checkLBWDecision(
 
   return {
     decision,
+    stumpsHit,
+    pitchZone,
+    impactZone,
+    batsmanHandedness,
+    strokeOffered,
+    lbwReason,
     bounceFrame: bouncePoint.frame,
     bouncePoint: { x: bouncePoint.x, y: bouncePoint.y },
     bouncePointMeters: bounceMeters || undefined,

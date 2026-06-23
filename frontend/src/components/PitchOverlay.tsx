@@ -243,7 +243,7 @@ export default function PitchOverlay({
           ctx.beginPath();
           ctx.arc(targetPt.x, targetPt.y, 7, 0, Math.PI * 2);
           
-          if (lbwDecision.decision === 'HITTING') {
+          if (lbwDecision.decision === 'HITTING' || lbwDecision.stumpsHit) {
             ctx.fillStyle = 'rgba(239, 68, 68, 0.85)'; // Red hitting
             ctx.strokeStyle = '#ef4444';
             ctx.shadowColor = 'rgba(239, 68, 68, 1)';

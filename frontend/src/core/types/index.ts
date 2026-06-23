@@ -25,7 +25,13 @@ export interface CalibrationData {
 }
 
 export interface LBWDecision {
-  decision: 'HITTING' | 'MISSING' | 'UNKNOWN';
+  decision: 'OUT' | 'NOT_OUT' | 'HITTING' | 'MISSING' | 'UNKNOWN';
+  stumpsHit?: boolean;
+  pitchZone?: 'IN_LINE' | 'OUTSIDE_OFF' | 'OUTSIDE_LEG';
+  impactZone?: 'IN_LINE' | 'OUTSIDE_OFF' | 'OUTSIDE_LEG';
+  batsmanHandedness?: 'RHB' | 'LHB';
+  strokeOffered?: boolean;
+  lbwReason?: string;
   bounceFrame?: number;
   bouncePoint?: Point;
   bouncePointMeters?: Point;

@@ -142,6 +142,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col antialiased">
+      {/* Device Orientation Enforcer Overlay */}
+      <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center select-none portrait:flex landscape:hidden">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mb-6 text-indigo-400 shadow-lg animate-pulse">
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-black text-white tracking-wide">Landscape Mode Required</h2>
+        <p className="text-sm text-slate-400 mt-2 max-w-sm leading-relaxed">
+          PocketDRS uses a fixed aspect ratio for precise pitch calibration and computer vision ball tracking.
+        </p>
+        <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider mt-4">
+          Please rotate your device to landscape
+        </p>
+      </div>
+
       {/* Dynamic Header */}
       <header className="p-5 bg-slate-900/60 border-b border-slate-800/80 backdrop-blur-lg flex justify-between items-center sticky top-0 z-30">
         <div className="flex items-center gap-3">
@@ -218,6 +234,16 @@ export default function Home() {
                 ballPositions={selectedDelivery.ballPositions}
                 rawPositions={selectedDelivery.rawPositions}
                 lbwDecision={selectedDelivery.lbwDecision}
+                onUpdateDecision={(newDecision) => {
+                  setDeliveries(prev =>
+                    prev.map(d =>
+                      d.id === selectedDelivery.id
+                        ? { ...d, lbwDecision: newDecision }
+                        : d
+                    )
+                  );
+                  setSelectedDelivery(prev => prev ? { ...prev, lbwDecision: newDecision } : null);
+                }}
                 onClose={() => {
                   setActiveMode('dashboard');
                   setSelectedDelivery(null);

@@ -33,11 +33,14 @@ export default function CalibrationWorkspace({
   });
 
   const [activeHandle, setActiveHandle] = useState<number | 'w0' | 'w1' | null>(null);
+  const [selectedHandle, setSelectedHandle] = useState<number | 'w0' | 'w1' | null>(null);
+  const [nudgeStep, setNudgeStep] = useState<1 | 5>(1);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [workspaceDims, setWorkspaceDims] = useState({ width: 0, height: 0 });
   
   // Magnifier loupe state
   const [loupePos, setLoupePos] = useState<Point | null>(null);
+  const loupeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const intrinsicWidth = capturedCanvas.width;
   const intrinsicHeight = capturedCanvas.height;
@@ -128,6 +131,7 @@ export default function CalibrationWorkspace({
   // Handle Drag / Pointer actions
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, id: number | 'w0' | 'w1', pt: Point) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent background deselect
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
 
     const clientRect = containerRef.current?.getBoundingClientRect();
@@ -140,6 +144,7 @@ export default function CalibrationWorkspace({
     const displayPt = toDisplay(pt);
 
     setActiveHandle(id);
+    setSelectedHandle(id); // Set selected persistent handle
     setDragOffset({
       x: clickX - displayPt.x,
       y: clickY - displayPt.y
@@ -192,8 +197,21 @@ export default function CalibrationWorkspace({
     setLoupePos(null);
   };
 
+  const handleBackgroundPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === 'CANVAS' ||
+      target.tagName === 'svg' ||
+      target.tagName === 'polygon' ||
+      target.tagName === 'rect' ||
+      target.id === 'workspace-container'
+    ) {
+      setSelectedHandle(null);
+    }
+  };
+
   // Render the magnifying loupe
-  const updateLoupe = (screenX: number, screenY: number, intPt: Point) => {
+  const updateLoupe = React.useCallback((screenX: number, screenY: number, intPt: Point) => {
     setLoupePos({ x: screenX, y: screenY });
 
     const canvas = loupeCanvasRef.current;
@@ -253,7 +271,93 @@ export default function CalibrationWorkspace({
     ctx.beginPath();
     ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 1.5, 0, Math.PI * 2);
     ctx.stroke();
-  };
+  }, [capturedCanvas]);
+
+  // Nudge selected handle by a direction and amount in pixels
+  const nudgeHandle = React.useCallback((dir: 'up' | 'down' | 'left' | 'right', amount: number = 1) => {
+    if (selectedHandle === null) return;
+
+    let targetPt: Point;
+
+    if (typeof selectedHandle === 'number') {
+      setPoints(prev => {
+        const next = [...prev];
+        const pt = next[selectedHandle];
+        const newPt = { ...pt };
+        if (dir === 'up') newPt.y = Math.max(0, pt.y - amount);
+        else if (dir === 'down') newPt.y = Math.min(intrinsicHeight, pt.y + amount);
+        else if (dir === 'left') newPt.x = Math.max(0, pt.x - amount);
+        else if (dir === 'right') newPt.x = Math.min(intrinsicWidth, pt.x + amount);
+        next[selectedHandle] = newPt;
+        
+        targetPt = newPt;
+        // Schedule loupe draw
+        const displayPt = {
+          x: targetPt.x * scaleX,
+          y: targetPt.y * scaleY
+        };
+        if (loupeTimeoutRef.current) clearTimeout(loupeTimeoutRef.current);
+        updateLoupe(displayPt.x, displayPt.y, targetPt);
+        loupeTimeoutRef.current = setTimeout(() => {
+          setLoupePos(null);
+        }, 1500);
+
+        return next;
+      });
+    } else {
+      setWicketBoxPoints(prev => {
+        const next = { ...prev };
+        const pt = next[selectedHandle];
+        const newPt = { ...pt };
+        if (dir === 'up') newPt.y = Math.max(0, pt.y - amount);
+        else if (dir === 'down') newPt.y = Math.min(intrinsicHeight, pt.y + amount);
+        else if (dir === 'left') newPt.x = Math.max(0, pt.x - amount);
+        else if (dir === 'right') newPt.x = Math.min(intrinsicWidth, pt.x + amount);
+        next[selectedHandle] = newPt;
+
+        targetPt = newPt;
+        // Schedule loupe draw
+        const displayPt = {
+          x: targetPt.x * scaleX,
+          y: targetPt.y * scaleY
+        };
+        if (loupeTimeoutRef.current) clearTimeout(loupeTimeoutRef.current);
+        updateLoupe(displayPt.x, displayPt.y, targetPt);
+        loupeTimeoutRef.current = setTimeout(() => {
+          setLoupePos(null);
+        }, 1500);
+
+        return next;
+      });
+    }
+  }, [selectedHandle, intrinsicWidth, intrinsicHeight, scaleX, scaleY, updateLoupe]);
+
+  // Keyboard nudge integration
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedHandle === null) return;
+      
+      const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+      if (!keys.includes(e.key)) return;
+      
+      e.preventDefault(); // Stop window scrolls
+      
+      const amount = e.shiftKey ? 5 : 1;
+      let dir: 'up' | 'down' | 'left' | 'right' = 'up';
+      
+      if (e.key === 'ArrowUp') dir = 'up';
+      else if (e.key === 'ArrowDown') dir = 'down';
+      else if (e.key === 'ArrowLeft') dir = 'left';
+      else if (e.key === 'ArrowRight') dir = 'right';
+      
+      nudgeHandle(dir, amount);
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedHandle, nudgeHandle]);
 
   // Safe packaging of coordinates for saving
   const handleSave = () => {
@@ -306,7 +410,9 @@ export default function CalibrationWorkspace({
       {/* Main Calibration Window */}
       <div 
         ref={containerRef} 
+        id="workspace-container"
         className="relative flex-1 w-full h-full flex items-center justify-center bg-black overflow-hidden pointer-events-auto"
+        onPointerDown={handleBackgroundPointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
@@ -371,41 +477,68 @@ export default function CalibrationWorkspace({
               <div
                 key={`pitch-handle-${index}`}
                 onPointerDown={(e) => handlePointerDown(e, index, pt)}
-                className={`absolute w-7 h-7 rounded-full bg-emerald-500/80 border-2 border-white shadow-lg cursor-pointer flex items-center justify-center z-20 transition hover:scale-110 active:scale-95`}
+                className={`absolute w-10 h-10 rounded-full cursor-pointer flex items-center justify-center z-20 transition hover:scale-110 active:scale-95 touch-none ${
+                  selectedHandle === index 
+                    ? 'ring-4 ring-indigo-500 ring-offset-2 ring-offset-slate-950 scale-110' 
+                    : ''
+                }`}
                 style={{
-                  left: displayPt.x - 14,
-                  top: displayPt.y - 14,
-                  touchAction: 'none'
+                  left: displayPt.x - 20,
+                  top: displayPt.y - 20,
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border border-white shadow-md transition ${
+                  selectedHandle === index
+                    ? 'bg-indigo-500 text-white font-black'
+                    : 'bg-emerald-500/80 text-white font-bold'
+                }`}>
+                  <span className="text-[10px]">{index}</span>
+                </div>
               </div>
             );
           })}
 
-          {/* Wicket Handles (Yellow) */}
+          {/* Wicket Handles (Yellow/Amber) */}
           <div
             onPointerDown={(e) => handlePointerDown(e, 'w0', wicketBoxPoints.w0)}
-            className="absolute w-7 h-7 rounded-full bg-amber-500/90 border-2 border-white shadow-lg cursor-pointer flex items-center justify-center z-20 transition hover:scale-110 active:scale-95"
+            className={`absolute w-10 h-10 rounded-full cursor-pointer flex items-center justify-center z-20 transition hover:scale-110 active:scale-95 touch-none ${
+              selectedHandle === 'w0'
+                ? 'ring-4 ring-indigo-500 ring-offset-2 ring-offset-slate-950 scale-110'
+                : ''
+            }`}
             style={{
-              left: displayW0.x - 14,
-              top: displayW0.y - 14,
-              touchAction: 'none'
+              left: displayW0.x - 20,
+              top: displayW0.y - 20,
             }}
           >
-            <span className="text-[8px] text-white font-bold font-mono">TL</span>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center border border-white shadow-md transition ${
+              selectedHandle === 'w0'
+                ? 'bg-indigo-500 text-white font-black'
+                : 'bg-amber-500/90 text-white font-bold'
+            }`}>
+              <span className="text-[8px] font-mono">TL</span>
+            </div>
           </div>
 
           <div
             onPointerDown={(e) => handlePointerDown(e, 'w1', wicketBoxPoints.w1)}
-            className="absolute w-7 h-7 rounded-full bg-amber-500/90 border-2 border-white shadow-lg cursor-pointer flex items-center justify-center z-20 transition hover:scale-110 active:scale-95"
+            className={`absolute w-10 h-10 rounded-full cursor-pointer flex items-center justify-center z-20 transition hover:scale-110 active:scale-95 touch-none ${
+              selectedHandle === 'w1'
+                ? 'ring-4 ring-indigo-500 ring-offset-2 ring-offset-slate-950 scale-110'
+                : ''
+            }`}
             style={{
-              left: displayW1.x - 14,
-              top: displayW1.y - 14,
-              touchAction: 'none'
+              left: displayW1.x - 20,
+              top: displayW1.y - 20,
             }}
           >
-            <span className="text-[8px] text-white font-bold font-mono">BR</span>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center border border-white shadow-md transition ${
+              selectedHandle === 'w1'
+                ? 'bg-indigo-500 text-white font-black'
+                : 'bg-amber-500/90 text-white font-bold'
+            }`}>
+              <span className="text-[8px] font-mono">BR</span>
+            </div>
           </div>
 
           {/* Floating Magnifying Loupe UI */}
@@ -413,8 +546,8 @@ export default function CalibrationWorkspace({
             <div
               className="absolute pointer-events-none z-30"
               style={{
-                left: loupePos.x > workspaceDims.width - 150 ? loupePos.x - 150 : loupePos.x + 30,
-                top: loupePos.y > workspaceDims.height - 150 ? loupePos.y - 150 : loupePos.y + 30
+                left: Math.max(10, Math.min(workspaceDims.width - 130, loupePos.x - 60)),
+                top: Math.max(10, loupePos.y - 140)
               }}
             >
               <canvas
@@ -427,6 +560,77 @@ export default function CalibrationWorkspace({
           )}
         </div>
       </div>
+
+      {/* Floating Selected Handle HUD & Nudge Controller */}
+      {selectedHandle !== null && (
+        <div className="mx-4 my-2 p-3.5 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center justify-between gap-4 shadow-2xl backdrop-blur-md z-30">
+          <div className="flex flex-col gap-1 text-left select-none">
+            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Adjusting Node</span>
+            <span className="text-xs font-black text-slate-200">
+              {typeof selectedHandle === 'number' 
+                ? `Pitch Point #${selectedHandle} (${selectedHandle === 0 ? 'Far-Left' : selectedHandle === 1 ? 'Far-Right' : selectedHandle === 2 ? 'Near-Right' : 'Near-Left'})`
+                : selectedHandle === 'w0' ? 'Wicket Box (Top-Left)' : 'Wicket Box (Bottom-Right)'}
+            </span>
+            <span className="text-[10px] font-mono text-slate-400">
+              X: {Math.round(typeof selectedHandle === 'number' ? points[selectedHandle].x : selectedHandle === 'w0' ? wicketBoxPoints.w0.x : wicketBoxPoints.w1.x)}px, 
+              Y: {Math.round(typeof selectedHandle === 'number' ? points[selectedHandle].y : selectedHandle === 'w0' ? wicketBoxPoints.w0.y : wicketBoxPoints.w1.y)}px
+            </span>
+            <button
+              onClick={() => setSelectedHandle(null)}
+              className="mt-1 text-[10px] font-bold text-rose-400 hover:text-rose-350 text-left transition"
+            >
+              ✕ Deselect Point
+            </button>
+          </div>
+
+          {/* D-Pad controls */}
+          <div className="grid grid-cols-3 gap-1 w-24 h-24 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80">
+            <div />
+            <button
+              onClick={() => nudgeHandle('up', nudgeStep)}
+              className="bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 text-white rounded-lg flex items-center justify-center transition text-xs font-bold"
+              title="Nudge Up"
+            >
+              ▲
+            </button>
+            <div />
+            <button
+              onClick={() => nudgeHandle('left', nudgeStep)}
+              className="bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 text-white rounded-lg flex items-center justify-center transition text-xs font-bold"
+              title="Nudge Left"
+            >
+              ◀
+            </button>
+            <button
+              onClick={() => setNudgeStep(prev => prev === 1 ? 5 : 1)}
+              className={`rounded-lg flex flex-col items-center justify-center text-[9px] font-black font-mono transition border ${
+                nudgeStep === 5 
+                  ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300' 
+                  : 'bg-slate-900 border-slate-800 text-slate-400'
+              }`}
+              title="Toggle step size"
+            >
+              {nudgeStep}px
+            </button>
+            <button
+              onClick={() => nudgeHandle('right', nudgeStep)}
+              className="bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 text-white rounded-lg flex items-center justify-center transition text-xs font-bold"
+              title="Nudge Right"
+            >
+              ▶
+            </button>
+            <div />
+            <button
+              onClick={() => nudgeHandle('down', nudgeStep)}
+              className="bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 text-white rounded-lg flex items-center justify-center transition text-xs font-bold"
+              title="Nudge Down"
+            >
+              ▼
+            </button>
+            <div />
+          </div>
+        </div>
+      )}
 
       {/* Warnings & Suggestions Panel */}
       {alignmentAnalysis.reasons.length > 0 && alignmentAnalysis.status !== 'excellent' && (

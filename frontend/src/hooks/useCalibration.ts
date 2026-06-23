@@ -22,16 +22,18 @@ export function useCalibration() {
     if (data) {
       try {
         const parsed = JSON.parse(data);
-        Promise.resolve().then(() => {
+        setTimeout(() => {
           setCalibration(parsed);
-        });
+          setIsLoaded(true);
+        }, 0);
+        return;
       } catch (e) {
         console.error('Failed to parse calibration from localStorage', e);
       }
     }
-    Promise.resolve().then(() => {
+    setTimeout(() => {
       setIsLoaded(true);
-    });
+    }, 0);
   }, []);
 
   /**
