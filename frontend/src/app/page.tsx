@@ -85,7 +85,9 @@ export default function Home() {
 
   const handleProcessDelivery = async (e: React.MouseEvent, del: Delivery) => {
     e.stopPropagation(); // Avoid triggering immediate playback opening
+    console.log('[TRACKING FLOW] 1. Track Button Clicked for delivery:', del.id, 'URL:', del.url);
     if (!calibration) {
+      console.warn('[TRACKING FLOW] 1. Calibration is missing, tracking aborted.');
       alert('You must calibrate the pitch before processing ball tracking.');
       return;
     }

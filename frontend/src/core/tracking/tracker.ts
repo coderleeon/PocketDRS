@@ -43,9 +43,16 @@ export async function trackBallInVideo(
   video.playsInline = true;
 
   // Wait for metadata to load
+  console.log('[TRACKING FLOW] 2. Video Loading requested, object URL:', objectUrl);
   await new Promise<void>((resolve, reject) => {
-    video.onloadedmetadata = () => resolve();
-    video.onerror = () => reject(new Error('Failed to load video file.'));
+    video.onloadedmetadata = () => {
+      console.log('[TRACKING FLOW] 2. Video Loaded. Dimensions:', video.videoWidth, 'x', video.videoHeight, 'Duration:', video.duration);
+      resolve();
+    };
+    video.onerror = (e) => {
+      console.error('[TRACKING FLOW] 2. Video Loading failed:', e);
+      reject(new Error('Failed to load video file.'));
+    };
   });
 
   const videoWidth = video.videoWidth;
@@ -75,12 +82,18 @@ export async function trackBallInVideo(
 
   // Create Pitch Corridor Mask if calibrated
   if (calibration && calibration.pitchPoints.length === 4) {
-    const ptsVec = new cv.IntVector();
-    calibration.pitchPoints.forEach(pt => {
-      ptsVec.push_back(pt.x);
-      ptsVec.push_back(pt.y);
-    });
+    const ptsData = [];
+    for (const pt of calibration.pitchPoints) {
+      ptsData.push(Math.round(pt.x));
+      ptsData.push(Math.round(pt.y));
+    }
+    const ptsMat = cv.matFromArray(4, 1, cv.CV_32SC2, ptsData);
+    const ptsVec = new cv.MatVector();
+    ptsVec.push_back(ptsMat);
+    
     cv.fillPoly(pitchMask, ptsVec, new cv.Scalar(255));
+    
+    ptsMat.delete();
     ptsVec.delete();
   } else {
     // Default to full frame
@@ -112,9 +125,13 @@ export async function trackBallInVideo(
   }
 
   const detectedCentroids: TrajectoryPoint[] = [];
+  console.log('[TRACKING FLOW] 3. Frame Processing Started. Total frames to process:', totalFrames);
 
   try {
     for (let frameIdx = 0; frameIdx < totalFrames; frameIdx++) {
+      if (frameIdx === 0) {
+        console.log('[TRACKING FLOW] 3. Frame processing loop started.');
+      }
       if (options?.onCancelCheck && options.onCancelCheck()) {
         break;
       }
@@ -139,10 +156,9 @@ export async function trackBallInVideo(
       const currGray = new cv.Mat();
       cv.cvtColor(maskedFrame, currGray, cv.COLOR_RGBA2GRAY);
 
-      const motionMask = new cv.Mat();
+      const motionMask = new cv.Mat.zeros(videoHeight, videoWidth, cv.CV_8UC1);
       if (frameIdx === 0) {
         currGray.copyTo(prevGray);
-        motionMask.setTo(new cv.Scalar(0));
       } else {
         const diffFrame = new cv.Mat();
         cv.absdiff(currGray, prevGray, diffFrame);
@@ -280,6 +296,7 @@ export async function trackBallInVideo(
       filteredTrajectory = [...detectedCentroids];
     }
 
+    console.log('[TRACKING FLOW] 4. Trajectory Generated. Detected centroids:', detectedCentroids.length, 'Filtered trajectory:', filteredTrajectory.length);
     URL.revokeObjectURL(objectUrl);
     return {
       fps,

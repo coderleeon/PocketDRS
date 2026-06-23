@@ -45,12 +45,16 @@ export function useBallTracker() {
         });
 
         if (trackingResult) {
+          console.log('[TRACKING FLOW] 5. Trajectory received. Calculating LBW decision.');
           const lbwDecision = checkLBWDecision(calibration, trackingResult.ballPositions);
+          console.log('[TRACKING FLOW] 5. LBW Calculated:', lbwDecision);
           setIsProcessing(false);
           return {
             ...trackingResult,
             lbwDecision
           };
+        } else {
+          console.warn('[TRACKING FLOW] Tracking result is null!');
         }
 
         setIsProcessing(false);
@@ -60,7 +64,7 @@ export function useBallTracker() {
         const errMsg = err instanceof Error ? err.message : String(err);
         setError(errMsg);
         setIsProcessing(false);
-        return null;
+        throw err;
       }
     },
     []
