@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PocketDRS - Portable Cricket DRS & Analytics",
-  description: "PocketDRS is an offline-first, browser-based cricket analytics platform providing a low-cost DRS-style experience using a single smartphone camera.",
+  title: "Pocket-DRS - Portable Cricket DRS & Analytics",
+  description: "Pocket-DRS is an offline-first, browser-based cricket analytics platform providing a low-cost DRS-style experience using a single smartphone camera.",
 };
 
 export default function RootLayout({

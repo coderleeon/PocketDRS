@@ -317,11 +317,11 @@ export default function PlaybackPlayer({
           </div>
         )}
 
-        {/* PocketDRS Wicket Hitting Prediction HUD */}
+        {/* Pocket-DRS Wicket Hitting Prediction HUD */}
         {activeLbwDecision && activeLbwDecision.decision !== 'UNKNOWN' && currentFrame >= (activeLbwDecision.impactFrame ?? 0) && (
           <div className="absolute top-4 right-4 z-20 pointer-events-auto p-4 rounded-2xl bg-slate-900/95 border border-slate-800 text-slate-100 flex flex-col gap-3 shadow-2xl backdrop-blur-md w-64">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-              <span className="font-extrabold text-[10px] text-indigo-400 tracking-widest uppercase">PocketDRS Review</span>
+              <span className="font-extrabold text-[10px] text-indigo-400 tracking-widest uppercase">Pocket-DRS Review</span>
               <span className="text-[10px] text-slate-400 font-mono">Conf: {activeLbwDecision.trajectoryConfidence}%</span>
             </div>
 

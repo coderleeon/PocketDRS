@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'PocketDRS',
-    short_name: 'PocketDRS',
-    description: 'PocketDRS - Portable Cricket DRS & Analytics Platform',
+    name: 'Pocket-DRS',
+    short_name: 'Pocket-DRS',
+    description: 'Pocket-DRS - Portable Cricket DRS & Analytics Platform',
     start_url: '/',
     display: 'standalone',
     background_color: '#020617', // slate-950

@@ -151,7 +151,7 @@ export default function Home() {
         </div>
         <h2 className="text-xl font-black text-white tracking-wide">Landscape Mode Required</h2>
         <p className="text-sm text-slate-400 mt-2 max-w-sm leading-relaxed">
-          PocketDRS uses a fixed aspect ratio for precise pitch calibration and computer vision ball tracking.
+          Pocket-DRS uses a fixed aspect ratio for precise pitch calibration and computer vision ball tracking.
         </p>
         <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider mt-4">
           Please rotate your device to landscape
@@ -166,10 +166,10 @@ export default function Home() {
           </div>
           <div>
             <h1 className="text-lg font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-              POCKETDRS
+              Pocket-DRS
             </h1>
             <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">
-              Pocket DRS Engine
+              Pocket-DRS Engine
             </p>
           </div>
         </div>
@@ -498,20 +498,18 @@ export default function Home() {
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-slate-850 pb-2">
               <h2 className="text-xs font-black tracking-wider uppercase text-indigo-400">
-                About PocketDRS
+                About Pocket-DRS
               </h2>
             </div>
             
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              PocketDRS is an experimental computer-vision-powered cricket review system designed for home, society, and amateur cricket. The platform uses on-device computer vision and trajectory analysis to estimate ball tracking, wicket prediction, and LBW decisions directly in the browser.
+              Pocket-DRS is an experimental computer-vision-powered cricket review system designed for home, society, and amateur cricket. The platform uses on-device computer vision and trajectory analysis to estimate ball tracking, wicket prediction, and LBW decisions directly in the browser.
             </p>
 
             <div className="flex flex-col gap-2 pt-1 border-t border-slate-800/60">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Creator</span>
               <div className="flex flex-col text-[11px]">
                 <span className="font-extrabold text-slate-200">Leeon John</span>
-                <span className="text-slate-400 text-[10px]">M.Tech Artificial Intelligence</span>
-                <span className="text-slate-500 text-[9px] font-mono leading-none mt-0.5">Pandit Deendayal Energy University (PDEU)</span>
               </div>
             </div>
 
@@ -554,7 +552,7 @@ export default function Home() {
             <div className="flex flex-col gap-1 border-t border-slate-800/60 pt-2 text-[9px] text-slate-500 leading-relaxed">
               <span className="font-bold text-slate-400 uppercase tracking-wider text-[8px]">Disclaimer</span>
               <p>
-                PocketDRS is an independent experimental project intended for amateur cricket analysis. It is not affiliated with ICC, Hawk-Eye, or any professional cricket governing body.
+                Pocket-DRS is an independent experimental project intended for amateur cricket analysis. It is not affiliated with ICC, Hawk-Eye, or any professional cricket governing body.
               </p>
             </div>
           </div>

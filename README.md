@@ -1,12 +1,12 @@
-# PocketDRS
+# Pocket-DRS
 
-PocketDRS is an offline-first, browser-based cricket analytics platform designed to deliver a low-cost, DRS-style experience using a single smartphone camera and a fixed playing environment (e.g., an indoor tiled pitch with a wicket cardboard marker).
+Pocket-DRS is an offline-first, browser-based cricket analytics platform designed to deliver a low-cost, DRS-style experience using a single smartphone camera and a fixed playing environment (e.g., an indoor tiled pitch with a wicket cardboard marker).
 
 ---
 
 ## Development Strategy: Single Shared Codebase
 
-To ensure stability, simple maintenance, and high performance across devices, PocketDRS uses a **single shared codebase** for both desktop and mobile platforms.
+To ensure stability, simple maintenance, and high performance across devices, Pocket-DRS uses a **single shared codebase** for both desktop and mobile platforms.
 
 ### Core Assets Shared:
 * **Calibration Logic**: The same coordinate math and homography solvers ([useCalibration.ts](file:///c:/GIT_projects/PocketDRS/frontend/src/hooks/useCalibration.ts)) are used by all devices.
@@ -24,7 +24,7 @@ To ensure stability, simple maintenance, and high performance across devices, Po
 ## Architecture Principles
 
 ### 1. Offline-First Architecture
-For Version 0 (MVP), PocketDRS functions completely on-device in the user's browser:
+For Version 0 (MVP), Pocket-DRS functions completely on-device in the user's browser:
 * **Camera Access & Recording**: Accomplished through standard HTML5 Media Devices and `MediaRecorder` APIs.
 * **Computer Vision**: High-performance client-side operations (homography calculation, coordinates projection) using **OpenCV.js**.
 * **Storage**: Calibration matrices and settings are persisted via browser `localStorage`.
