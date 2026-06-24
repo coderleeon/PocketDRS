@@ -19,11 +19,9 @@ An **offline-first, browser-based cricket analytics platform** designed to deliv
 * **⚖️ Custom LBW Rules Engine**: Translates 2D canvas trajectory pixels to real-world ground meters using homography projection matrices. Automates official ICC LBW rules processing with toggles for batsman handedness and stroke offering.
 * **💾 Local Persistence**: Instant profile reload on client initialization from browser `localStorage`, eliminating loading lag or hydration flashes.
 
----
-
 ## 🏗️ System Architecture
 
-The following diagram illustrates how video frames progress from standard browser inputs to mathematical 3D trajectory estimations entirely on the client-side:
+Pocket-DRS is engineered as an offline-first, client-driven platform that offloads real-time computer vision processing to the browser to ensure zero latency and minimal backend dependencies.
 
 ```mermaid
 graph TD
@@ -44,6 +42,24 @@ graph TD
     style J fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:#fff
     style L fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
 ```
+
+### Key Architectural Pillars
+
+#### 📴 1. Offline-First & Client-Driven
+To enable seamless field usage under unpredictable network conditions, all compute-heavy operations are executed locally:
+* **Camera Access & Capture**: Managed through standard browser HTML5 `MediaDevices` and recorded via `MediaRecorder` APIs.
+* **Computer Vision**: Frame parsing, grayscaling, thresholding, and contour filtering are powered on-device by **OpenCV.js** compiled to WebAssembly.
+* **State Persistence**: Calibration matrix formulas and system presets are instantly stored and reloaded from browser `localStorage`.
+
+#### 🧬 2. Hybrid Computing Model (Next.js + FastAPI)
+Responsibilities are clearly decoupled to maintain high rendering framerates and minimize hosting overhead:
+* **Client-Side (Next.js)**: Runs all frame-by-frame image operations, coordinate matrix transformations, interactive UX elements, and SVG/Canvas canvas annotations at 60 FPS.
+* **Analytical Backend (FastAPI)**: Serves as an asynchronous decision-support engine, handling future long-term storage, bowling statistics, and cross-session historical telemetry.
+
+#### 🔒 3. Zero-Trust Media Policy
+User privacy and network bandwidth are protected by separating media from telemetry:
+* Raw video recordings are kept **strictly in-memory** as temporary object URLs and are never transmitted to any external server.
+* The optional backend service only receives lightweight, structured JSON metadata (e.g. bounce coordinates, batsman impact coordinates, velocities, and decision parameters) rather than large binary video files.
 
 ---
 
